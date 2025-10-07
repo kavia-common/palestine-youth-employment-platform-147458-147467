@@ -1,0 +1,31 @@
+{
+  "app": {
+    "title": "منصة مطابقة الوظائف",
+    "welcome": "مرحباً",
+    "jobs": "الوظائف",
+    "dashboard": "لوحة التحكم",
+    "employer": "صاحب العمل",
+    "admin": "المشرف",
+    "login": "تسجيل الدخول",
+    "register": "إنشاء حساب",
+    "logout": "تسجيل الخروج",
+    "notifications": "الإشعارات",
+    "language": "اللغة",
+    "theme": "المظهر",
+    "light": "فاتح",
+    "dark": "داكن"
+  },
+  "jobs": {
+    "list_title": "الوظائف المتاحة",
+    "view": "عرض",
+    "apply": "تقديم",
+    "updated_in_realtime": "تحديثات لحظية"
+  },
+  "auth": {
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "confirm_password": "تأكيد كلمة المرور",
+    "have_account": "هل لديك حساب؟",
+    "no_account": "ليس لديك حساب؟"
+  }
+}

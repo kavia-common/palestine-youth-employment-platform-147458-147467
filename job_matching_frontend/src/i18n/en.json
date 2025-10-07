@@ -1,0 +1,31 @@
+{
+  "app": {
+    "title": "YEP Job Matching",
+    "welcome": "Welcome",
+    "jobs": "Jobs",
+    "dashboard": "Dashboard",
+    "employer": "Employer",
+    "admin": "Admin",
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "notifications": "Notifications",
+    "language": "Language",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "jobs": {
+    "list_title": "Available Jobs",
+    "view": "View",
+    "apply": "Apply",
+    "updated_in_realtime": "Updates in real time"
+  },
+  "auth": {
+    "email": "Email",
+    "password": "Password",
+    "confirm_password": "Confirm Password",
+    "have_account": "Already have an account?",
+    "no_account": "Don't have an account?"
+  }
+}
