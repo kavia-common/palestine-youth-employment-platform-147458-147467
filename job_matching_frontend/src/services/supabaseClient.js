@@ -9,6 +9,11 @@ import { createClient } from '@supabase/supabase-js';
  */
 let supabase = null;
 
+/**
+ * PUBLIC_INTERFACE
+ * getSupabaseClient
+ * Create or return the Supabase client. In development, emits diagnostic logs for easier realtime troubleshooting.
+ */
 export function getSupabaseClient() {
   if (supabase) return supabase;
 
@@ -16,9 +21,19 @@ export function getSupabaseClient() {
   const key = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
   if (!url || !key) {
-    console.warn('Supabase env variables are missing. Realtime features will be disabled.');
-    // Create a stub client-like object to prevent runtime crashes if needed
+    console.warn(
+      'Supabase env variables are missing. Realtime features will be disabled. ' +
+      'Please set REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY in your .env'
+    );
     return null;
+  }
+
+  const isDev = process.env.NODE_ENV === 'development';
+  if (isDev) {
+    console.info('[Supabase] Initializing client', {
+      url_preview: url ? url.replace(/(https?:\/\/)(.{3}).+?(\.supabase\.co)/, '$1$2***$3') : null,
+      anon_key_prefix: key ? `${key.slice(0, 6)}...` : null
+    });
   }
 
   supabase = createClient(url, key, {
@@ -28,8 +43,13 @@ export function getSupabaseClient() {
       detectSessionInUrl: true
     },
     realtime: {
+      // Developer-friendly rate and logging
       params: { eventsPerSecond: 10 }
-    }
+    },
+    global: {
+      fetch: (...args) => fetch(...args),
+    },
+    // Supabase-js v2 exposes debug via global log level; we will log manually in subscribers
   });
 
   return supabase;

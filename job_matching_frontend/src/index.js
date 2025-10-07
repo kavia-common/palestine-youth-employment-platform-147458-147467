@@ -14,6 +14,18 @@ import AdminDashboard from './routes/Admin/AdminDashboard';
 import Login from './routes/Auth/Login';
 import Register from './routes/Auth/Register';
 
+if (process.env.NODE_ENV === 'development') {
+  // Log a safe preview of env config to help validate wiring
+  const safe = (v) => (typeof v === 'string' && v.length > 8 ? `${v.slice(0, 8)}...` : v);
+  // eslint-disable-next-line no-console
+  console.log('[Boot] ENV summary', {
+    API_BASE: process.env.REACT_APP_API_BASE_URL || '(not set)',
+    SUPABASE_URL: process.env.REACT_APP_SUPABASE_URL || '(not set)',
+    SUPABASE_ANON_KEY: safe(process.env.REACT_APP_SUPABASE_ANON_KEY || '(not set)'),
+    origin: window.location.origin
+  });
+}
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
 root.render(

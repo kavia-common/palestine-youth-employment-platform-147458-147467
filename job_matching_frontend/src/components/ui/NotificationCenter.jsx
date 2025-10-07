@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 /**
  * PUBLIC_INTERFACE
  * NotificationCenter - shows latest notifications from realtime channel
+ * Note: Expects broadcast events with name "new_notification" on channel "public:notifications".
+ * If backend emits DB row changes instead, migrate hook to listen to postgres_changes on a notifications table.
  */
 export default function NotificationCenter() {
   const { t } = useTranslation();

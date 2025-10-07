@@ -9,14 +9,18 @@ const API_BASE = process.env.REACT_APP_API_BASE_URL;
  */
 export async function request(path, options = {}) {
   if (!API_BASE) {
-    console.warn('REACT_APP_API_BASE_URL is not set. Using relative path which may fail in development.');
+    console.warn(
+      'REACT_APP_API_BASE_URL is not set. Using relative path which may fail in development. ' +
+      'Set REACT_APP_API_BASE_URL to your backend preview, e.g., http://localhost:3001'
+    );
   }
-  const url = `${API_BASE ?? ''}${path}`;
+  const base = API_BASE ?? '';
+  const url = `${base}${path}`;
   const headers = {
     'Content-Type': 'application/json',
     ...(options.headers || {})
   };
-  const res = await fetch(url, { ...options, headers });
+  const res = await fetch(url, { ...options, headers, mode: 'cors' });
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`API error ${res.status}: ${text}`);
@@ -28,7 +32,10 @@ export async function request(path, options = {}) {
   return res.text();
 }
 
-// PUBLIC_INTERFACE
+/**
+ * PUBLIC_INTERFACE
+ * JobsAPI - wrapper for Jobs endpoints
+ */
 export const JobsAPI = {
   /**
    * Get list of jobs

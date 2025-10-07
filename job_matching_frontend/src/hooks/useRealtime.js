@@ -17,35 +17,65 @@ export default function useRealtime({ onJobUpsert, onNotification } = {}) {
     const supabase = getSupabaseClient();
     if (!supabase) return;
 
+    const isDev = process.env.NODE_ENV === 'development';
+
+    // Jobs channel: postgres_changes on public.jobs
     const jobsChannel = supabase
-      .channel('public:jobs')
+      .channel('public:jobs', { config: { broadcast: { ack: true }, presence: { key: 'jobs-list' } } })
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'jobs' },
         (payload) => {
+          if (isDev) {
+            console.debug('[Realtime] jobs change', {
+              type: payload.eventType,
+              new: payload.new,
+              old: payload.old,
+            });
+          }
           if (handlersRef.current.onJobUpsert) {
             handlersRef.current.onJobUpsert(payload);
           }
         }
       )
       .subscribe((status) => {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Jobs channel status:', status);
+        if (isDev) {
+          console.log('[Realtime] Jobs channel status:', status);
         }
       });
 
+    // Notifications: broadcast channel "public:notifications", event "new_notification"
     const notifChannel = supabase
-      .channel('public:notifications')
+      .channel('public:notifications', { config: { broadcast: { ack: true } } })
       .on(
         'broadcast',
         { event: 'new_notification' },
         (payload) => {
+          if (isDev) {
+            console.debug('[Realtime] notification broadcast', payload);
+          }
           if (handlersRef.current.onNotification) {
-            handlersRef.current.onNotification(payload?.payload);
+            handlersRef.current.onNotification(payload?.payload ?? payload);
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (isDev) {
+          console.log('[Realtime] Notifications channel status:', status);
+        }
+      });
+
+    // Global socket state logs (help diagnose websocket/CORS)
+    try {
+      const rt = supabase?.realtime;
+      if (rt && isDev) {
+        rt.onOpen(() => console.log('[Realtime] socket open'));
+        rt.onClose(() => console.warn('[Realtime] socket closed'));
+        rt.onError((e) => console.error('[Realtime] socket error', e));
+      }
+    } catch (e) {
+      // ignore
+    }
 
     return () => {
       try {

@@ -9,6 +9,32 @@ This project provides a minimal React template with a clean, modern UI and minim
 - **Fast**: Minimal dependencies for quick loading times
 - **Simple**: Easy to understand and modify
 
+## Environment Setup
+
+Copy `.env.example` to `.env` and set:
+
+- `REACT_APP_API_BASE_URL` → Backend URL (preview/dev is typically `http://localhost:3001` or the preview URL provided)
+- `REACT_APP_SUPABASE_URL` → Your Supabase project URL
+- `REACT_APP_SUPABASE_ANON_KEY` → Your Supabase anon key
+
+On app boot (development), the console logs a safe preview of these values to help validate wiring.
+
+## Realtime Subscriptions
+
+The frontend subscribes to:
+- `public:jobs` via `postgres_changes` to reflect inserts/updates/deletes in the Jobs list
+- `public:notifications` via `broadcast` event `new_notification` to update the topbar notification counter
+
+If updates are not reflected:
+1. Check browser console for `[Realtime]` logs (connection status, events)
+2. Ensure Realtime is enabled for the `public` schema and that Publications include `jobs` table
+3. Verify the broadcast event name `new_notification` matches your server emitter
+4. Confirm CORS and websocket access are not blocked by the backend or proxies
+
+## CORS Verification
+
+The backend exposes a non-sensitive debug endpoint `/api/debug/cors` showing `allow_origins`. Ensure your frontend origin (e.g., `http://localhost:3000`) appears there. API base URL should point to the FastAPI backend preview on port `3001`.
+
 ## Getting Started
 
 In the project directory, you can run:
@@ -31,17 +57,7 @@ It correctly bundles React in production mode and optimizes the build for the be
 
 ### Colors
 
-The main brand colors are defined as CSS variables in `src/App.css`:
-
-```css
-:root {
-  --kavia-orange: #E87A41;
-  --kavia-dark: #1A1A1A;
-  --text-color: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.7);
-  --border-color: rgba(255, 255, 255, 0.1);
-}
-```
+The main brand colors are defined as CSS variables in `src/App.css`.
 
 ### Components
 
@@ -57,26 +73,8 @@ Common components include:
 
 To learn React, check out the [React documentation](https://reactjs.org/).
 
-### Code Splitting
+### Troubleshooting
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- If you see API CORS errors, verify `REACT_APP_API_BASE_URL` is set and backend CORS allows your frontend origin.
+- If realtime doesn’t connect, confirm Supabase env variables are set and that Realtime is enabled for your schema/tables.
+- Check the browser console for `[Boot]` and `[Realtime]` diagnostics.
