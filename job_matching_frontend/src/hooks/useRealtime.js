@@ -19,7 +19,16 @@ export default function useRealtime({ onJobUpsert, onNotification } = {}) {
 
     const isDev = process.env.NODE_ENV === 'development';
 
-    // Jobs channel: postgres_changes on public.jobs
+    // Log boot summary for easier troubleshooting of envs and realtime
+    if (isDev) {
+      // eslint-disable-next-line no-console
+      console.log('[Realtime] Boot', {
+        supabase_url_set: !!process.env.REACT_APP_SUPABASE_URL,
+        supabase_key_set: !!process.env.REACT_APP_SUPABASE_ANON_KEY,
+      });
+    }
+
+    // Jobs channel: postgres_changes on public.jobs (requires Realtime enabled on table/publication)
     const jobsChannel = supabase
       .channel('public:jobs', { config: { broadcast: { ack: true }, presence: { key: 'jobs-list' } } })
       .on(
@@ -41,11 +50,15 @@ export default function useRealtime({ onJobUpsert, onNotification } = {}) {
       .subscribe((status) => {
         if (isDev) {
           console.log('[Realtime] Jobs channel status:', status);
+          if (status === 'SUBSCRIBED') {
+            console.log('[Realtime] Subscribed to postgres_changes on public.jobs. Ensure DB publication includes this table and RLS policies allow changes to be streamed.');
+          }
         }
       });
 
-    // Notifications: broadcast channel "public:notifications", event "new_notification"
-    const notifChannel = supabase
+    // Notifications: Prefer broadcast event "new_notification" on channel "public:notifications".
+    // If not receiving, fallback to postgres_changes on public.notifications (insert-only) to cover DB-driven notifications.
+    let notifChannel = supabase
       .channel('public:notifications', { config: { broadcast: { ack: true } } })
       .on(
         'broadcast',
@@ -61,9 +74,42 @@ export default function useRealtime({ onJobUpsert, onNotification } = {}) {
       )
       .subscribe((status) => {
         if (isDev) {
-          console.log('[Realtime] Notifications channel status:', status);
+          console.log('[Realtime] Notifications broadcast channel status:', status);
         }
       });
+
+    // After a small grace period, if there have been no broadcasts, attach a postgres_changes fallback.
+    // Note: This does not disable broadcast; both may coexist safely.
+    const fallbackTimer = setTimeout(() => {
+      try {
+        // Attach postgres_changes to the SAME channel name for consistency
+        notifChannel = supabase
+          .channel('public:notifications', { config: { broadcast: { ack: true } } })
+          .on(
+            'postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'notifications' },
+            (payload) => {
+              if (isDev) {
+                console.debug('[Realtime] notifications row insert (fallback)', payload);
+              }
+              const notif = payload?.new || payload?.record || payload;
+              if (handlersRef.current.onNotification && notif) {
+                handlersRef.current.onNotification(notif);
+              }
+            }
+          )
+          .subscribe((status) => {
+            if (isDev) {
+              console.log('[Realtime] Notifications postgres_changes fallback status:', status);
+              if (status === 'SUBSCRIBED') {
+                console.log('[Realtime] Using notifications table fallback via postgres_changes. Ensure table is added to Realtime publication and RLS allows visibility to anon (or use JWT with appropriate policies).');
+              }
+            }
+          });
+      } catch (e) {
+        if (isDev) console.warn('[Realtime] Failed to attach notifications postgres_changes fallback', e);
+      }
+    }, 1500);
 
     // Global socket state logs (help diagnose websocket/CORS)
     try {
@@ -79,10 +125,19 @@ export default function useRealtime({ onJobUpsert, onNotification } = {}) {
 
     return () => {
       try {
+        clearTimeout(fallbackTimer);
+      } catch (e) {
+        // ignore
+      }
+      try {
         supabase.removeChannel(jobsChannel);
+      } catch (e) {
+        // ignore
+      }
+      try {
         supabase.removeChannel(notifChannel);
       } catch (e) {
-        // ignore cleanup errors
+        // ignore
       }
     };
   }, []);

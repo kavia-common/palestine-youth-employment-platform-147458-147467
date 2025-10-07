@@ -6,6 +6,10 @@ import { createClient } from '@supabase/supabase-js';
  * Required env:
  *  - REACT_APP_SUPABASE_URL
  *  - REACT_APP_SUPABASE_ANON_KEY
+ *
+ * Notes:
+ * - Ensure Realtime is enabled on your Supabase project and that the publication includes the required tables (e.g., public.jobs, public.notifications).
+ * - For broadcast events, backend emitters should target the same channel name used here ("public:notifications").
  */
 let supabase = null;
 

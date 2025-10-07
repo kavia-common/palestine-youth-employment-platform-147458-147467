@@ -19,17 +19,24 @@ Copy `.env.example` to `.env` and set:
 
 On app boot (development), the console logs a safe preview of these values to help validate wiring.
 
+Quick validation checklist:
+- Visit the backend docs to confirm availability: http://localhost:3001/docs (or your preview URL)
+- In browser devtools console, ensure you see `[Boot] ENV summary` and `[Supabase] Initializing client`
+- Ensure `.env` values are loaded (Create React App requires vars prefixed with `REACT_APP_`)
+
 ## Realtime Subscriptions
 
 The frontend subscribes to:
 - `public:jobs` via `postgres_changes` to reflect inserts/updates/deletes in the Jobs list
-- `public:notifications` via `broadcast` event `new_notification` to update the topbar notification counter
+- `public:notifications` primarily via `broadcast` event `new_notification`
+- If broadcast is not used by your backend, the frontend automatically attaches a fallback `postgres_changes` subscription to the `public.notifications` table (INSERT only)
 
 If updates are not reflected:
 1. Check browser console for `[Realtime]` logs (connection status, events)
-2. Ensure Realtime is enabled for the `public` schema and that Publications include `jobs` table
-3. Verify the broadcast event name `new_notification` matches your server emitter
-4. Confirm CORS and websocket access are not blocked by the backend or proxies
+2. Ensure Realtime is enabled for the `public` schema and that Publications include `jobs` and `notifications` tables
+3. For broadcast: verify the event name `new_notification` matches your server emitter and that the channel name is `public:notifications`
+4. For `postgres_changes`: verify your Realtime publication includes the tables and RLS allows streaming the rows to anon (or use a JWT with appropriate claims)
+5. Confirm CORS and websocket access are not blocked by the backend or proxies
 
 ## CORS Verification
 
@@ -46,7 +53,7 @@ Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
 
 ### `npm test`
 
-Launches the test runner in interactive watch mode.
+Launches the test runner in non-watch mode in CI.
 
 ### `npm run build`
 
@@ -77,4 +84,6 @@ To learn React, check out the [React documentation](https://reactjs.org/).
 
 - If you see API CORS errors, verify `REACT_APP_API_BASE_URL` is set and backend CORS allows your frontend origin.
 - If realtime doesn’t connect, confirm Supabase env variables are set and that Realtime is enabled for your schema/tables.
-- Check the browser console for `[Boot]` and `[Realtime]` diagnostics.
+- Make sure your Realtime publication includes `public.jobs` and (if using fallback) `public.notifications`.
+- For broadcast flows, ensure the backend emits to `public:notifications` with event `new_notification`.
+- Check the browser console for `[Boot]`, `[Supabase]`, and `[Realtime]` diagnostics.
